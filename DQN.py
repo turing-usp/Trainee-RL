@@ -1,4 +1,4 @@
-from pong.objects import Environment
+import gym
 
 class ReplayBuffer:
     """Um buffer que armazena transições e permite a amostragem de transições aleatórias."""
@@ -77,8 +77,8 @@ class DQNAgent:
 
 
 if __name__ == '__main__':
-    # Para utilizar as 4 variáveis de estado, mude easy_mode para False
-    env = Environment(easy_mode=True)
+    # Crie o ambiente 'pong:turing-easy-v0'
+    env = ...
 
     # Hiperparâmetros da política epsilon-greedy
     initial_eps = 1
@@ -90,8 +90,8 @@ if __name__ == '__main__':
     # Número total de episódios
     num_episodes = 20
 
-    agent = DQNAgent(action_dim=3,
-                     state_dim=2 if env.easy_mode else 4,
+    agent = DQNAgent(action_dim=...,
+                     state_dim=...,
                      architecture=[32, 32],
                      batch_size=512,
                      gamma=gamma)

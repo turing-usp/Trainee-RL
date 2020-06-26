@@ -1,9 +1,9 @@
-from pong.objects import Environment
+import gym
 
 # Essa funcao deve rodar um episodio do ambiente escolhendo acoes aleatorias
 def rodar_ambiente():
-    # Crie o ambiente
-    env = Environment()
+    # Crie o ambiente 'pong:turing-easy-v0'
+    env = ...
 
     # Receba a observacao do primeiro estado
     state = ...
