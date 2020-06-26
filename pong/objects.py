@@ -33,20 +33,10 @@ class Bar:
             for k in lookup_table.keys():  # verificamos se a tecla foi apertada
                 if pressed[k]:
                     self.y = lookup_table[k](self.y)
-            # clamping
-            if self.y >= self.screen_height:
-                self.y = self.screen_height
-            elif self.y <= 0:
-                self.y = 0
 
         elif mode == 'machine':
             if move != 0:
                 self.y = lookup_table[move](self.y)
-            # clamp
-            if self.y >= self.screen_height:
-                self.y = self.screen_height
-            elif self.y <= 0:
-                self.y = 0
 
         elif mode == 'enemy':
             if self.y != ball.y and np.random.random() < .6 and ball.x >= self.screen_width*.8:
@@ -54,6 +44,8 @@ class Bar:
             else:
                 vec = 0
             self.y += self.velocity*vec
+
+        self.y = np.clip(self.y, 0, self.screen_height)
 
 
 class Ball:
@@ -68,13 +60,13 @@ class Ball:
         v = self.abs_velocity
         direction = np.random.uniform(np.pi/8, np.pi/3)  # first quadrant
         direction *= np.random.choice([-1, 1])  # right side
-        direction += np.random.choice([0, np.pi])  # left sideu
+        direction += np.random.choice([0, np.pi])  # left side
         self.velocity = [
             v*np.cos(direction), -v*np.sin(direction)]
 
     def move(self):
-        self.x = self.x + self.velocity[0]
-        self.y = self.y + self.velocity[1]
+        self.x += self.velocity[0]
+        self.y += self.velocity[1]
 
     def draw(self, screen, color=(255, 255, 255)):
         pygame.draw.circle(
@@ -97,7 +89,7 @@ class PongEnv(gym.Env):
 
     def __init__(self, HEIGHT=300, WIDTH=400,
                  bar_velocity=6, ball_velocity=2,
-                 matches=7, max_steps=10_000, fps=100):
+                 num_matches=7, fps=100):
         # x, y, length, width, velocity, orientation
         bar_parameters = [(15, HEIGHT/2, 100, 5, bar_velocity, 0),
                           (WIDTH-15, HEIGHT/2, 100, 5, bar_velocity, 0),
@@ -108,9 +100,8 @@ class PongEnv(gym.Env):
 
         self.HEIGHT = HEIGHT
         self.WIDTH = WIDTH
-        self.max_steps = max_steps
         self.rendered = False
-        self.matches = matches
+        self.num_matches = num_matches
         self.fps = fps
         self.clock = pygame.time.Clock()
 
@@ -124,23 +115,26 @@ class PongEnv(gym.Env):
         # x inicial; y inicial; raio
         self.ball = Ball(WIDTH/2, HEIGHT/2, 10, ball_velocity)
 
-    def reset(self):
+    def reset_match(self):
         self.ball.x, self.ball.y = self.WIDTH/2, self.HEIGHT/2
-        self.steps = 0
         self.control_bar.x, self.control_bar.y = 15, self.HEIGHT/2
         self.other_bar.x, self.other_bar.y = self.WIDTH - 15, self.HEIGHT/2
         self.ball.reset_velocity()
+
+    def _get_state(self):
+        return np.array([self.control_bar.x, self.control_bar.y,
+                         self.ball.x, self.ball.y])
+
+    def reset(self):
+        self.reset_match()
         self.done = False
         self.score = [0, 0]
-
-        dx = self.control_bar.x - self.ball.x
-        dy = self.control_bar.y - self.ball.y
-
-        return ((dx, dy))
+        return self._get_state()
 
     def step(self, action):
-        reward = 0
-        self.steps += 1
+        if self.done:
+            return
+
         self.control_bar.move(mode='machine', move=action)
         self.other_bar.move(mode='enemy', ball=self.ball)
         self.ball.move()
@@ -148,39 +142,20 @@ class PongEnv(gym.Env):
         for bar in self.bars:
             self.ball.bounce(bar)
 
-        if self.ball.x <= 4:
-
-            self.ball.x, self.ball.y = self.WIDTH/2, self.HEIGHT/2
-            self.control_bar.x, self.control_bar.y = 15, self.HEIGHT/2
-            self.other_bar.x, self.other_bar.y = self.WIDTH - 15, self.HEIGHT/2
-            self.ball.reset_velocity()
-
-            self.score[1] += 1
-            reward = -500
-            if self.score[-1] >= self.matches / 2:
+        if 4 < self.ball.x < self.WIDTH - 4:
+            reward = 0
+        else:
+            player_scored = self.ball.x > 4
+            self.score[0 if player_scored else 1] += 1
+            mul = 1 if player_scored else -1
+            reward = 500 * mul
+            if max(self.score) >= self.num_matches / 2:
                 self.done = True
-                reward -= 2000
+                reward += 2000 * mul
 
-        elif self.ball.x >= self.WIDTH - 4:
+            self.reset_match()
 
-            self.ball.x, self.ball.y = self.WIDTH/2, self.HEIGHT/2
-            self.control_bar.x, self.control_bar.y = 15, self.HEIGHT/2
-            self.other_bar.x, self.other_bar.y = self.WIDTH - 15, self.HEIGHT/2
-            self.ball.reset_velocity()
-
-            self.score[0] += 1
-            reward = +500
-            if self.score[0] >= self.matches/2:
-                self.done = True
-                reward += 2000
-
-        if self.steps >= self.max_steps:
-            self.done = True
-
-        state = np.array([self.control_bar.x, self.control_bar.y,
-                          self.ball.x, self.ball.y])
-
-        return (state, reward, self.done, {})
+        return (self._get_state(), reward, self.done, {})
 
     def render(self, mode='human', wait=True):
         if mode != 'human':
@@ -211,9 +186,7 @@ class EasyPongEnv(PongEnv):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def step(self, action):
-        _, reward, done, info = super().step()
+    def _get_state(self):
         dx = self.control_bar.x - self.ball.x
         dy = self.control_bar.y - self.ball.y
-        state = np.array([dx, dy])
-        return state, reward, done, info
+        return np.array([dx, dy])
