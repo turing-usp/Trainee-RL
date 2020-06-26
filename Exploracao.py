@@ -1,9 +1,9 @@
-import gym
+from ambiente.objects import Environment
 
 # Essa funcao deve rodar um episodio do ambiente escolhendo acoes aleatorias
 def rodar_ambiente():
     # Crie o ambiente
-    env = ...
+    env = Environment()
 
     # Receba a observacao do primeiro estado
     state = ...
@@ -24,9 +24,6 @@ def rodar_ambiente():
 
         # Atualizando o estado
         state = next_state
-
-    # Fechando o ambiente
-    env.close()
 
 if __name__ == '__main__':
     rodar_ambiente()

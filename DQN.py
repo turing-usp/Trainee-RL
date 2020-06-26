@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+from ambiente.objects import Environment
 
 
 class ReplayBuffer:
@@ -78,7 +78,8 @@ class DQNAgent:
 
 
 if __name__ == '__main__':
-    env = ...
+    # Para utilizar as 4 variáveis de estado, mude easy_mode para False
+    env = Environment(easy_mode=True)
     agent = DQNAgent(action_dim=..., state_dim=...,
                      batch_size=32, learning_rate=1e-3,
                      gamma=0.99)
