@@ -1,6 +1,7 @@
+import numpy as np
 import pygame
-import numpy as np  
-from gym import spaces
+import gym
+
 
 class Bar:
     def __init__(self, x, y, screen_width, screen_height, length=20, width=2, velocity=2, orientation=1):
@@ -87,9 +88,16 @@ class Ball:
             self.velocity[1] *= lookup_table[wall.orientation][1]
 
 
-class Environment:
-    def __init__(self, HEIGHT=300, WIDTH=400, easy_mode=True,
-                 bar_velocity=6, ball_velocity=2, matches=7, max_steps=10_000, fps=100):
+class PongEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
+    reward_range = (-2000, 2000)
+    action_space = gym.spaces.Discrete(3)
+    observation_space = gym.spaces.Box(
+        low=-np.float32('inf'), high=np.float32('inf'), shape=(4,))
+
+    def __init__(self, HEIGHT=300, WIDTH=400,
+                 bar_velocity=6, ball_velocity=2,
+                 matches=7, max_steps=10_000, fps=100):
         # x, y, length, width, velocity, orientation
         bar_parameters = [(15, HEIGHT/2, 100, 5, bar_velocity, 0),
                           (WIDTH-15, HEIGHT/2, 100, 5, bar_velocity, 0),
@@ -103,11 +111,8 @@ class Environment:
         self.max_steps = max_steps
         self.rendered = False
         self.matches = matches
-        self.easy_mode = easy_mode
         self.fps = fps
         self.clock = pygame.time.Clock()
-
-        self.action_space = spaces.Discrete(3)
 
         self.bars = []
         for x, y, length, width, velocity, orientation in bar_parameters:
@@ -172,17 +177,15 @@ class Environment:
         if self.steps >= self.max_steps:
             self.done = True
 
-        if self.easy_mode:
-            dx = self.control_bar.x - self.ball.x
-            dy = self.control_bar.y - self.ball.y
-            state = np.array([dx, dy])
-        else:
-            state = np.array([self.control_bar.x, self.control_bar.y,
-                              self.ball.x, self.ball.y])
+        state = np.array([self.control_bar.x, self.control_bar.y,
+                          self.ball.x, self.ball.y])
 
         return (state, reward, self.done, {})
 
-    def render(self, wait=True):
+    def render(self, mode='human', wait=True):
+        if mode != 'human':
+            return super().render(mode=mode)
+
         if not self.rendered:
             self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
             self.rendered = True
@@ -196,3 +199,21 @@ class Environment:
         pygame.display.update()
         if wait:
             self.clock.tick(self.fps)
+
+    def close(self):
+        pygame.display.quit()
+
+
+class EasyPongEnv(PongEnv):
+    observation_space = gym.spaces.Box(
+        low=-np.float32('inf'), high=np.float32('inf'), shape=(2,))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def step(self, action):
+        _, reward, done, info = super().step()
+        dx = self.control_bar.x - self.ball.x
+        dy = self.control_bar.y - self.ball.y
+        state = np.array([dx, dy])
+        return state, reward, done, info
