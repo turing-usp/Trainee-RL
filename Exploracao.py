@@ -1,4 +1,4 @@
-from ambiente.objects import Environment
+from pong.objects import Environment
 
 # Essa funcao deve rodar um episodio do ambiente escolhendo acoes aleatorias
 def rodar_ambiente():

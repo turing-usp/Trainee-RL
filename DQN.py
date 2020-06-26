@@ -1,5 +1,4 @@
-from ambiente.objects import Environment
-
+from pong.objects import Environment
 
 class ReplayBuffer:
     """Um buffer que armazena transições e permite a amostragem de transições aleatórias."""

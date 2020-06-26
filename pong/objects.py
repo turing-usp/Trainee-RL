@@ -1,6 +1,6 @@
 import pygame
 import numpy as np  
-
+from gym import spaces
 
 class Bar:
     def __init__(self, x, y, screen_width, screen_height, length=20, width=2, velocity=2, orientation=1):
@@ -106,6 +106,8 @@ class Environment:
         self.easy_mode = easy_mode
         self.fps = fps
         self.clock = pygame.time.Clock()
+
+        self.action_space = spaces.Discrete(3)
 
         self.bars = []
         for x, y, length, width, velocity, orientation in bar_parameters:
