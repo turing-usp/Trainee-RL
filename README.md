@@ -4,6 +4,8 @@ Bem vinde, jovem aventureire, à **📚 Grande Biblioteca da Guilda Turing 🏰*
 
 Nesta seção de pergaminhos, você encontrará todo o material necessário para enfrentar as árduas tarefas descritas no **[🗡 Manual do Aventureiro 🛡](Manual%20do%20Aventureiro.pdf)**.
 
+Entretanto, antes de começar a escrever qualquer magia, você deve criar uma cópia virtual da biblioteca *na sua conta* com os livros necessários, [por meio deste requerimento](https://github.com/GrupoTuring/Trainee-RL/generate). É nesta cópia que você deverá começar a sua aventura.
+
 ## 📜 Pergaminhos
 
 Em sua jornada para alcançar a mestria da conjuração, você deverá ler e eventualmente escrever diversos pergaminhos mágicos. Estes escritos serão melhor explicados a seguir:
