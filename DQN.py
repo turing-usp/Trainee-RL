@@ -40,20 +40,20 @@ class ReplayBuffer:
 class DQNAgent:
     """Implementa um agente de RL usando Deep Q-Learning."""
 
-    def __init__(self, state_dim, action_dim,
+    def __init__(self, state_dim, action_dim, architecture,
                  buffer_size=100_000,
-                 batch_size=32,
-                 gamma=0.97,
-                 learning_rate=1e-3):
+                 batch_size=128,
+                 gamma=1.00):
         """Cria um agente de DQN com os hiperparâmetros especificados
 
         Args:
             state_dim (int): número de variáveis de estado.
             action_dim (int): número de ações possíveis.
+            architecture (list of float, optional): lista com o número de neurônios
+                                                    de cada camada da DQN.
             buffer_size (int, optional): tamanho máximo do replay buffer.
             batch_size (int, optional): número de transições utilizadas por batch.
             gamma (float, optional): fator de desconto utilizado no calculo do retorno.
-            learning_rate (float, optional): taxa de aprendizado da rede neural.
         """
         pass
 
@@ -80,21 +80,23 @@ class DQNAgent:
 if __name__ == '__main__':
     # Para utilizar as 4 variáveis de estado, mude easy_mode para False
     env = Environment(easy_mode=True)
-    agent = DQNAgent(action_dim=..., state_dim=...,
-                     batch_size=32, learning_rate=1e-3,
-                     gamma=0.99)
 
     # Hiperparâmetros da política epsilon-greedy
     initial_eps = 1
     min_eps = 0.001
-    eps_decay = .95
+    eps_decay = .85
     eps = initial_eps
+    gamma = .995
 
     # Número total de episódios
-    num_episodes = 150
+    num_episodes = 20
+
+    agent = DQNAgent(action_dim=3,
+                     state_dim=2 if env.easy_mode else 4,
+                     architecture=[32, 32],
+                     batch_size=512,
+                     gamma=gamma)
 
     for episode in range(num_episodes):
         # Rodar o episódio, da mesma forma que com o agente aleatório.
         pass
-
-    env.close()
