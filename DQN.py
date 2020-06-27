@@ -82,13 +82,13 @@ if __name__ == '__main__':
 
     # Hiperparâmetros da política epsilon-greedy
     initial_eps = 1
-    min_eps = 0.001
+    min_eps = 0.01
     eps_decay = .85
     eps = initial_eps
     gamma = .995
 
     # Número total de episódios
-    num_episodes = 20
+    num_episodes = 25
 
     agent = DQNAgent(action_dim=...,
                      state_dim=...,
