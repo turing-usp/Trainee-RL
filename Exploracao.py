@@ -25,5 +25,8 @@ def rodar_ambiente():
         # Atualizando o estado
         state = next_state
 
+        # Fechando o ambiente
+        env.close()
+
 if __name__ == '__main__':
     rodar_ambiente()

@@ -99,3 +99,6 @@ if __name__ == '__main__':
     for episode in range(num_episodes):
         # Rodar o episódio, da mesma forma que com o agente aleatório.
         pass
+
+    # Fechando o ambiente
+    env.close()
