@@ -13,10 +13,11 @@ class Bar:
         self.orientation = orientation  # 1 para horizontal, 0 para vertical
         self.screen_width = screen_width
         self.screen_height = screen_height
+        self._direction = 0
 
     def draw(self, screen, color=(255, 255, 255)):  # desenhar em pygame
-        pygame.draw.rect(screen, color, [
-                         self.x-self.width/2, self.y-self.length/2, self.width, self.length])
+        pygame.draw.rect(screen, color, (
+                         self.x-self.width/2, self.y-self.length/2, self.width, self.length))
 
     # mode = (human, machine, enemy); move = (0,1,2)
     def move(self, mode='human', move=None, ball=None):
@@ -39,11 +40,12 @@ class Bar:
                 self.y = lookup_table[move](self.y)
 
         elif mode == 'enemy':
-            if self.y != ball.y and np.random.random() < .6 and ball.x >= self.screen_width*.8:
-                vec = ((ball.y - self.y)/abs(ball.y - self.y))
-            else:
-                vec = 0
-            self.y += self.velocity*vec
+            if self._direction != 0:
+                if np.random.random() < .08:
+                    self._direction = 0
+            elif ball.x >= self.screen_width*.6 and np.random.random() < .85:
+                self._direction = ((ball.y - self.y)/abs(ball.y - self.y))
+            self.y += self.velocity*self._direction
 
         self.y = np.clip(self.y, 0, self.screen_height)
 
@@ -82,21 +84,21 @@ class Ball:
 
 class PongEnv(gym.Env):
     metadata = {'render.modes': ['human']}
-    reward_range = (-2000, 2000)
+    reward_range = (-float('inf'), float('inf'))
     action_space = gym.spaces.Discrete(3)
     observation_space = gym.spaces.Box(
         low=-np.float32('inf'), high=np.float32('inf'), shape=(4,))
 
-    def __init__(self, HEIGHT=300, WIDTH=400,
-                 bar_velocity=6, ball_velocity=2,
-                 num_matches=7, fps=100):
+    def __init__(self, HEIGHT=300, WIDTH=400, repeat_actions=3,
+                 bar_velocity=3, ball_velocity=2,
+                 num_matches=7, fps=50):
         # x, y, length, width, velocity, orientation
-        bar_parameters = [(15, HEIGHT/2, 100, 5, bar_velocity, 0),
-                          (WIDTH-15, HEIGHT/2, 100, 5, bar_velocity, 0),
-                          (WIDTH/2, 0,  2, WIDTH, 0, 1),
-                          (WIDTH / 2, HEIGHT,  2, WIDTH, 0, 1),
-                          (0, HEIGHT/2, HEIGHT, 2, 0, 0),
-                          (WIDTH, HEIGHT/2, HEIGHT, 2, 0, 0)]
+        bar_parameters = [(15,        HEIGHT/2, 100,    8,     bar_velocity, 0),
+                          (WIDTH-15,  HEIGHT/2, 100,    8,     bar_velocity, 0),
+                          (WIDTH/2,   0,        5,      WIDTH, 0,            1),
+                          (WIDTH / 2, HEIGHT,   5,      WIDTH, 0,            1),
+                          (0,         HEIGHT/2, HEIGHT, 5,     0,            0),
+                          (WIDTH,     HEIGHT/2, HEIGHT, 5,     0,            0)]
 
         self.HEIGHT = HEIGHT
         self.WIDTH = WIDTH
@@ -104,6 +106,7 @@ class PongEnv(gym.Env):
         self.num_matches = num_matches
         self.fps = fps
         self.clock = pygame.time.Clock()
+        self.repeat_actions = repeat_actions
 
         self.bars = []
         for x, y, length, width, velocity, orientation in bar_parameters:
@@ -132,6 +135,15 @@ class PongEnv(gym.Env):
         return self._get_state()
 
     def step(self, action):
+        total_reward = 0
+        for _ in range(self.repeat_actions):
+            state, reward, done, info = self._step(action)
+            total_reward += reward
+            if done:
+                break
+        return state, total_reward, done, info
+
+    def _step(self, action):
         if self.done:
             return
 
@@ -152,7 +164,6 @@ class PongEnv(gym.Env):
             if max(self.score) >= self.num_matches / 2:
                 self.done = True
                 reward += 2000 * mul
-
             self.reset_match()
 
         return (self._get_state(), reward, self.done, {})
@@ -171,6 +182,7 @@ class PongEnv(gym.Env):
         for bar in self.bars:
             bar.draw(self.screen)
         self.ball.draw(self.screen)
+        pygame.display.set_caption(f'Pong - {self.score[0]} x {self.score[1]}')
         pygame.display.update()
         if wait:
             self.clock.tick(self.fps)
